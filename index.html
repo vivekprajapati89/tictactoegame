@@ -860,31 +860,58 @@
         }
 
         function updateScore(winner) {
+            let el;
             if (winner === 'X') {
                 scores.x++;
-                document.getElementById('score-x').innerText = scores.x;
+                el = document.getElementById('score-x');
+                el.innerText = scores.x;
             } else if (winner === 'O') {
                 scores.o++;
-                document.getElementById('score-o').innerText = scores.o;
+                el = document.getElementById('score-o');
+                el.innerText = scores.o;
             } else if (winner === 'tie') {
                 scores.tie++;
-                document.getElementById('score-tie').innerText = scores.tie;
+                el = document.getElementById('score-tie');
+                el.innerText = scores.tie;
+            }
+            
+            if (el) {
+                el.classList.add('score-pop');
+                el.addEventListener('animationend', () => {
+                    el.classList.remove('score-pop');
+                }, { once: true });
             }
         }
 
+        let isResetting = false;
+
         function resetBoard(playSound = true) {
-            boardState = Array(9).fill("");
-            currentPlayer = "X";
-            isGameActive = true;
+            if (isResetting) return;
+            isResetting = true;
+            isGameActive = false;
 
             const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                cell.innerHTML = "";
-                cell.className = "cell"; // Remove win-cell, x-win, o-win
+            
+            // Step 1: Scale down all cells in a cascade
+            cells.forEach((cell, index) => {
+                setTimeout(() => {
+                    cell.classList.add('cell-resetting');
+                }, index * 40); // 40ms cascade
             });
 
-            updateTurnIndicator();
-            stopConfetti();
+            // Step 2: Clear content and scale back up after all scale-downs finish
+            setTimeout(() => {
+                cells.forEach(cell => {
+                    cell.innerHTML = "";
+                    cell.className = "cell";
+                });
+                
+                currentPlayer = "X";
+                isGameActive = true;
+                isResetting = false;
+                updateTurnIndicator();
+                stopConfetti();
+            }, 9 * 40 + 300); // Max cascade delay + transition duration (300ms)
 
             if (playSound) {
                 playSynthSound('reset');
@@ -893,9 +920,25 @@
 
         function resetAllScores() {
             scores = { x: 0, o: 0, tie: 0 };
-            document.getElementById('score-x').innerText = "0";
-            document.getElementById('score-o').innerText = "0";
-            document.getElementById('score-tie').innerText = "0";
+            
+            const elements = [
+                document.getElementById('score-x'),
+                document.getElementById('score-tie'),
+                document.getElementById('score-o')
+            ];
+            
+            elements.forEach(el => {
+                el.classList.add('score-roll');
+                // Halfway through the roll, set the text to 0
+                setTimeout(() => {
+                    el.innerText = "0";
+                }, 200);
+                
+                el.addEventListener('animationend', () => {
+                    el.classList.remove('score-roll');
+                }, { once: true });
+            });
+
             resetBoard(false);
             playSynthSound('reset');
         }
