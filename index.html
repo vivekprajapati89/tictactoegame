@@ -891,6 +891,15 @@
             }
         }
 
+        function resetAllScores() {
+            scores = { x: 0, o: 0, tie: 0 };
+            document.getElementById('score-x').innerText = "0";
+            document.getElementById('score-o').innerText = "0";
+            document.getElementById('score-tie').innerText = "0";
+            resetBoard(false);
+            playSynthSound('reset');
+        }
+
         // --- AI Logic (Minimax and Difficulties) ---
         function makeAIMove() {
             if (!isGameActive) return;
