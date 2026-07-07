@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe - Retro-Futuristic Edition</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            
+            /* X Brand - Cyan Glow */
+            --color-x: #00f2fe;
+            --color-x-glow: rgba(0, 242, 254, 0.5);
+            --color-x-grad: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            
+            /* O Brand - Hot Pink Glow */
+            --color-o: #ff0844;
+            --color-o-glow: rgba(255, 8, 68, 0.5);
+            --color-o-grad: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+            
+            /* UI Accent Colors */
+            --accent: #8a2be2;
+            --accent-grad: linear-gradient(135deg, #7f00ff 0%, #e100ff 100%);
+            --accent-glow: rgba(127, 0, 255, 0.4);
+            
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* Ambient background glow orbs */
+        .glow-orb {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: 0;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        .orb-1 {
+            top: -100px;
+            left: -100px;
+            background: var(--color-x);
+            animation: float 15s ease-in-out infinite alternate;
+        }
+        .orb-2 {
+            bottom: -100px;
+            right: -100px;
+            background: var(--color-o);
+            animation: float 18s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 50px) scale(1.2); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Glassmorphism Card Wrapper */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #fff 20%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* Game Mode & Difficulty Controls */
+        .controls-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: calc(var(--radius-md) - 4px);
+            transition: var(--transition);
+            z-index: 1;
+        }
+
+        .toggle-btn.active {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .difficulty-container {
+            display: flex;
+            gap: 8px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .difficulty-container.show {
+            max-height: 50px;
+            opacity: 1;
+        }
+
+        .diff-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            padding: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .diff-btn.active {
+            background: var(--accent-grad);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .score-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .score-box:not(:last-child) {
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .score-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .score-box.x-score .score-label { color: var(--color-x); }
+        .score-box.o-score .score-label { color: var(--color-o); }
+
+        .score-val {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        /* Turn Indicator */
+        .turn-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            height: 24px;
+        }
+
+        .turn-badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .turn-badge.x-turn {
+            background-color: var(--color-x);
+            box-shadow: 0 0 8px var(--color-x-glow);
+        }
+
+        .turn-badge.o-turn {
+            background-color: var(--color-o);
+            box-shadow: 0 0 8px var(--color-o-glow);
+        }
+
+        /* Game Board Grid */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 12px;
+            aspect-ratio: 1;
+            margin: 10px 0;
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: var(--transition);
+            box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.01);
+        }
+
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell:active {
+            transform: translateY(0);
+        }
+
+        /* X & O Markers */
+        .marker {
+            width: 55%;
+            height: 55%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: marker-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes marker-pop {
+            0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+
+        /* X Drawing */
+        .marker-x {
+            color: var(--color-x);
+            filter: drop-shadow(0 0 8px var(--color-x-glow));
+            width: 100%;
+            height: 100%;
+        }
+
+        /* O Drawing */
+        .marker-o {
+            color: var(--color-o);
+            filter: drop-shadow(0 0 8px var(--color-o-glow));
+            width: 100%;
+            height: 100%;
+        }
+
+        /* SVG Paths */
+        .marker svg {
+            width: 100%;
+            height: 100%;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: draw 0.4s ease-out forwards;
+        }
+
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Win highlight styles */
+        .cell.win-cell {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent);
+            animation: cell-pulse 1.5s infinite alternate;
+        }
+
+        .cell.win-cell.x-win {
+            border-color: var(--color-x);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2), inset 0 0 15px rgba(0, 242, 254, 0.1);
+        }
+
+        .cell.win-cell.o-win {
+            border-color: var(--color-o);
+            box-shadow: 0 0 15px rgba(255, 8, 68, 0.2), inset 0 0 15px rgba(255, 8, 68, 0.1);
+        }
+
+        @keyframes cell-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.03); }
+        }
+
+        /* Control Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--accent-grad);
+            color: white;
+            border: none;
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 12px 28px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-color);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Utilities */
+        .footer-utils {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+        }
+
+        .audio-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .audio-toggle:hover {
+            color: var(--text-color);
+        }
+
+        .reset-all-scores {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .reset-all-scores:hover {
+            color: var(--color-o);
+            text-decoration: underline;
+        }
+
+        /* Confetti Canvas */
+        #confetti {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti"></canvas>
+
+    <!-- Background glowing orbs -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="container">
+        <div class="glass-card">
+            
+            <!-- Title & Header -->
+            <header>
+                <h1>Tic Tac Toe</h1>
+                <div class="subtitle">Retro-Futuristic Battle</div>
+            </header>
+
+            <!-- Game Settings -->
+            <div class="controls-group">
+                <!-- Mode Selector -->
+                <div class="toggle-container">
+                    <button class="toggle-btn active" id="mode-pvp" onclick="setMode('pvp')">Local PvP</button>
+                    <button class="toggle-btn" id="mode-ai" onclick="setMode('ai')">Vs AI</button>
+                </div>
+                
+                <!-- Difficulty (Visible only in Vs AI mode) -->
+                <div class="difficulty-container" id="difficulty-wrapper">
+                    <button class="diff-btn" id="diff-easy" onclick="setDifficulty('easy')">Easy</button>
+                    <button class="diff-btn active" id="diff-medium" onclick="setDifficulty('medium')">Medium</button>
+                    <button class="diff-btn" id="diff-hard" onclick="setDifficulty('hard')">Impossible</button>
+                </div>
+            </div>
+
+            <!-- Scoreboard -->
+            <div class="scoreboard">
+                <div class="score-box x-score">
+                    <span class="score-label" id="p1-label">Player 1 (X)</span>
+                    <span class="score-val" id="score-x">0</span>
+                </div>
+                <div class="score-box tie-score">
+                    <span class="score-label">Ties</span>
+                    <span class="score-val" id="score-tie">0</span>
+                </div>
+                <div class="score-box o-score">
+                    <span class="score-label" id="p2-label">Player 2 (O)</span>
+                    <span class="score-val" id="score-o">0</span>
+                </div>
+            </div>
+
+            <!-- Active Player Status -->
+            <div class="turn-indicator" id="turn-status">
+                <span class="turn-badge x-turn" id="turn-badge"></span>
+                <span id="turn-text">Player X's Turn</span>
+            </div>
+
+            <!-- Grid Board -->
+            <div class="board" id="board">
+                <div class="cell" data-index="0" onclick="handleCellClick(0)"></div>
+                <div class="cell" data-index="1" onclick="handleCellClick(1)"></div>
+                <div class="cell" data-index="2" onclick="handleCellClick(2)"></div>
+                <div class="cell" data-index="3" onclick="handleCellClick(3)"></div>
+                <div class="cell" data-index="4" onclick="handleCellClick(4)"></div>
+                <div class="cell" data-index="5" onclick="handleCellClick(5)"></div>
+                <div class="cell" data-index="6" onclick="handleCellClick(6)"></div>
+                <div class="cell" data-index="7" onclick="handleCellClick(7)"></div>
+                <div class="cell" data-index="8" onclick="handleCellClick(8)"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="resetBoard(true)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    Play Again
+                </button>
+            </div>
+
+            <!-- Footer Utilities -->
+            <div class="footer-utils">
+                <button class="audio-toggle" id="audio-toggle-btn" onclick="toggleAudio()">
+                    <svg id="volume-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <span id="audio-toggle-text">Sound: On</span>
+                </button>
+                <button class="reset-all-scores" onclick="resetAllScores()">Reset All Scores</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script Section -->
+    <script>
+        // --- Web Audio Synth System ---
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSynthSound(type) {
+            if (!audioEnabled) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+
+                if (type === 'x') {
+                    // Crisp synth chime for X
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.15); // G5
+                    
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'o') {
+                    // Soft but rich synth chime for O
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(392.00, now); // G4
+                    osc.frequency.exponentialRampToValueAtTime(587.33, now + 0.15); // D5
+                    
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    // Celebratory chord sequence
+                    const notes = [261.63, 329.63, 392.00, 523.25]; // C major chord
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        
+                        gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.4);
+                        
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.4);
+                    });
+                } else if (type === 'tie') {
+                    // Neutral, slightly descending flat tone
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220.00, now); // A3
+                    osc.frequency.linearRampToValueAtTime(146.83, now + 0.35); // D3
+                    
+                    // Low pass filter to make sawtooth mellow
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(400, now);
+
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'reset') {
+                    // Upward sweep
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.2);
+                    
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                }
+            } catch (e) {
+                console.error("Audio playback error:", e);
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const volumeIcon = document.getElementById('volume-icon');
+            const audioText = document.getElementById('audio-toggle-text');
+            if (audioEnabled) {
+                audioText.innerText = "Sound: On";
+                volumeIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>`;
+                playSynthSound('reset');
+            } else {
+                audioText.innerText = "Sound: Off";
+                volumeIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>`;
+            }
+        }
+
+        // --- SVGs for Markers ---
+        const svgX = `
+            <div class="marker marker-x">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </div>`;
+
+        const svgO = `
+            <div class="marker marker-o">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+            </div>`;
+
+        // --- Game State Variables ---
+        let boardState = Array(9).fill("");
+        let currentPlayer = "X"; // X always starts
+        let isGameActive = true;
+        let gameMode = "pvp"; // 'pvp' or 'ai'
+        let aiDifficulty = "medium"; // 'easy', 'medium', 'hard' (Impossible)
+        
+        let scores = {
+            x: 0,
+            o: 0,
+            tie: 0
+        };
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        // --- Main Functions ---
+        
+        function setMode(mode) {
+            if (gameMode === mode) return;
+            gameMode = mode;
+            
+            // Update active state in UI buttons
+            document.getElementById('mode-pvp').classList.toggle('active', mode === 'pvp');
+            document.getElementById('mode-ai').classList.toggle('active', mode === 'ai');
+            
+            // Show/Hide difficulty selectors
+            const diffWrapper = document.getElementById('difficulty-wrapper');
+            if (mode === 'ai') {
+                diffWrapper.classList.add('show');
+                document.getElementById('p2-label').innerText = "AI (O)";
+            } else {
+                diffWrapper.classList.remove('show');
+                document.getElementById('p2-label').innerText = "Player 2 (O)";
+            }
+            
+            playSynthSound('reset');
+            resetAllScores();
+        }
+
+        function setDifficulty(diff) {
+            if (aiDifficulty === diff) return;
+            aiDifficulty = diff;
+            
+            document.getElementById('diff-easy').classList.toggle('active', diff === 'easy');
+            document.getElementById('diff-medium').classList.toggle('active', diff === 'medium');
+            document.getElementById('diff-hard').classList.toggle('active', diff === 'hard');
+            
+            playSynthSound('reset');
+            resetBoard(true);
+        }
+
+        function handleCellClick(index) {
+            // Check if cell is occupied, game is inactive, or AI is currently thinking
+            if (boardState[index] !== "" || !isGameActive) return;
+            if (gameMode === 'ai' && currentPlayer === 'O') return;
+
+            makeMove(index, currentPlayer);
+
+            if (checkWinOrTie()) return;
+
+            // Toggle player
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            updateTurnIndicator();
+
+            // If PvAI mode, trigger AI move
+            if (gameMode === 'ai' && isGameActive && currentPlayer === 'O') {
+                setTimeout(makeAIMove, 500); // 500ms delay for premium feel (feels like thinking)
+            }
+        }
+
+        function makeMove(index, player) {
+            boardState[index] = player;
+            const cell = document.querySelector(`.cell[data-index='${index}']`);
+            cell.innerHTML = player === "X" ? svgX : svgO;
+            
+            // Play placement synth chime
+            playSynthSound(player.toLowerCase());
+        }
+
+        function updateTurnIndicator() {
+            const turnBadge = document.getElementById('turn-badge');
+            const turnText = document.getElementById('turn-text');
+            
+            if (currentPlayer === "X") {
+                turnBadge.className = "turn-badge x-turn";
+                turnText.innerText = "Player X's Turn";
+            } else {
+                turnBadge.className = "turn-badge o-turn";
+                turnText.innerText = gameMode === 'ai' ? "AI is thinking..." : "Player O's Turn";
+            }
+        }
+
+        function checkWinOrTie() {
+            let roundWon = false;
+            let winningLine = [];
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                    roundWon = true;
+                    winningLine = [a, b, c];
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                highlightWinner(winningLine, currentPlayer);
+                updateScore(currentPlayer);
+                isGameActive = false;
+                
+                // Show status
+                const turnText = document.getElementById('turn-text');
+                if (gameMode === 'ai') {
+                    turnText.innerText = currentPlayer === 'X' ? '🎉 You Won!' : '🤖 AI Won!';
+                } else {
+                    turnText.innerText = `🎉 Player ${currentPlayer} Won!`;
+                }
+
+                playSynthSound('win');
+                startConfetti();
+                return true;
+            }
+
+            // Check for Tie
+            if (!boardState.includes("")) {
+                updateScore('tie');
+                isGameActive = false;
+                document.getElementById('turn-text').innerText = "🤝 It's a Tie!";
+                document.getElementById('turn-badge').className = "turn-badge";
+                playSynthSound('tie');
+                return true;
+            }
+
+            return false;
+        }
+
+        function highlightWinner(line, player) {
+            line.forEach(index => {
+                const cell = document.querySelector(`.cell[data-index='${index}']`);
+                cell.classList.add('win-cell');
+                cell.classList.add(player.toLowerCase() + '-win');
+            });
+        }
+
+        function updateScore(winner) {
+            if (winner === 'X') {
+                scores.x++;
+                document.getElementById('score-x').innerText = scores.x;
+            } else if (winner === 'O') {
+                scores.o++;
+                document.getElementById('score-o').innerText = scores.o;
+            } else if (winner === 'tie') {
+                scores.tie++;
+                document.getElementById('score-tie').innerText = scores.tie;
+            }
+        }
+
+        function resetBoard(playSound = true) {
+            boardState = Array(9).fill("");
+            currentPlayer = "X";
+            isGameActive = true;
+
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.innerHTML = "";
+                cell.className = "cell"; // Remove win-cell, x-win, o-win
+            });
+
+            updateTurnIndicator();
+            stopConfetti();
+
+            if (playSound) {
+                playSynthSound('reset');
+            }
+        }
+
+        // --- AI Logic (Minimax and Difficulties) ---
+        function makeAIMove() {
+            if (!isGameActive) return;
+
+            let bestMoveIndex;
+
+            if (aiDifficulty === 'easy') {
+                bestMoveIndex = getRandomMove();
+            } else if (aiDifficulty === 'medium') {
+                // 50% chance of impossible move, 50% chance of random move
+                if (Math.random() < 0.5) {
+                    bestMoveIndex = getBestMove();
+                } else {
+                    bestMoveIndex = getRandomMove();
+                }
+            } else {
+                // Impossible mode
+                bestMoveIndex = getBestMove();
+            }
+
+            if (bestMoveIndex !== undefined && bestMoveIndex !== null) {
+                makeMove(bestMoveIndex, "O");
+                if (checkWinOrTie()) return;
+                
+                currentPlayer = "X";
+                updateTurnIndicator();
+            }
+        }
+
+        function getRandomMove() {
+            const availableMoves = [];
+            boardState.forEach((val, idx) => {
+                if (val === "") availableMoves.push(idx);
+            });
+            if (availableMoves.length === 0) return null;
+            return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
+
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let move;
+
+            for (let i = 0; i < 9; i++) {
+                if (boardState[i] === "") {
+                    boardState[i] = "O"; // Try AI move
+                    let score = minimax(boardState, 0, false);
+                    boardState[i] = ""; // Undo
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
+                }
+            }
+            return move;
+        }
+
+        function minimax(state, depth, isMaximizing) {
+            // Evaluate state
+            let score = evaluateBoard(state);
+
+            // Return score if game has ended
+            if (score === 10) return score - depth; // Prefer winning sooner
+            if (score === -10) return score + depth; // Prefer losing later
+            if (!state.includes("")) return 0; // Tie
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === "") {
+                        state[i] = "O";
+                        let val = minimax(state, depth + 1, false);
+                        state[i] = "";
+                        bestScore = Math.max(bestScore, val);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === "") {
+                        state[i] = "X";
+                        let val = minimax(state, depth + 1, true);
+                        state[i] = "";
+                        bestScore = Math.min(bestScore, val);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function evaluateBoard(state) {
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (state[a] && state[a] === state[b] && state[a] === state[c]) {
+                    if (state[a] === "O") return 10; // AI wins
+                    if (state[a] === "X") return -10; // Player wins
+                }
+            }
+            return 0; // Neutral
+        }
+
+        // --- Canvas Confetti Celebration System ---
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        let confettiActive = false;
+        let confettiParticles = [];
+        const confettiColors = ['#00f2fe', '#ff0844', '#7f00ff', '#e100ff', '#f1c40f', '#2ecc71'];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Confetti {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.size = Math.random() * 8 + 6;
+                this.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                this.speed = Math.random() * 3 + 2;
+                this.angle = Math.random() * 360;
+                this.spinSpeed = Math.random() * 4 - 2;
+                this.wobble = Math.random() * 10;
+                this.wobbleSpeed = Math.random() * 0.05 + 0.02;
+            }
+
+            update() {
+                this.y += this.speed;
+                this.angle += this.spinSpeed;
+                this.wobble += this.wobbleSpeed;
+                
+                // Horizontal drift
+                this.x += Math.sin(this.wobble) * 0.5;
+
+                // Recycle if it goes off bottom
+                if (this.y > canvas.height) {
+                    this.y = -10;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle * Math.PI / 180);
+                ctx.fillStyle = this.color;
+                
+                // Draw decorative rectangles / circles
+                if (this.size % 2 === 0) {
+                    ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function startConfetti() {
+            confettiActive = true;
+            confettiParticles = [];
+            for (let i = 0; i < 100; i++) {
+                confettiParticles.push(new Confetti());
+            }
+            animateConfetti();
+        }
+
+        function stopConfetti() {
+            confettiActive = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function animateConfetti() {
+            if (!confettiActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            confettiParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animateConfetti);
+        }
+    </script>
+</body>
+</html>
