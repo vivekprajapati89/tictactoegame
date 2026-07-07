@@ -374,6 +374,32 @@
             100% { transform: scale(1.03); }
         }
 
+        .cell-resetting {
+            transform: scale(0.6);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+
+        .score-pop {
+            animation: score-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes score-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        .score-roll {
+            animation: score-roll 0.4s ease;
+        }
+
+        @keyframes score-roll {
+            0% { opacity: 1; transform: translateY(0); }
+            50% { opacity: 0.5; transform: translateY(-8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
         /* Control Action Buttons */
         .action-buttons {
             display: flex;
@@ -906,6 +932,7 @@
                     cell.className = "cell";
                 });
                 
+                boardState = Array(9).fill("");
                 currentPlayer = "X";
                 isGameActive = true;
                 isResetting = false;
